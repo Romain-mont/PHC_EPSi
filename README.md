@@ -1,51 +1,155 @@
 # Personal Health Coach (PHC)
 
-## Introduction
+Application Streamlit d'analyse de données de santé Apple Health, propulsée par LangChain et OpenAI.
 
-Everyone talks about GenAI those days, so I created the project to gain some GenAI skills. The idea is to create a simple application which uses LLM to analyze Apple health data then make recommendations.
+## Prérequis
 
-### Data
+- Docker 20.10+
+- Une clé API OpenAI
 
-Apple Health app collects health and fitness data from your iPhone, iPad, the built-in sensors on your Apple Watch, compatible third-party devices and apps that use HealthKit. The repository includes sample [workout data](./data/workouts_data.csv) and [record data](./data/records_data.csv) that you can play with.
+---
 
-If you are interested to use your own data, here is the instruction: the data is stored in the devices (iphone, ipad), so you need to export the data first (Open Health app, tap on the top right user icon, select Export Health Data), then download the exported data to your computer. Once you have the data, copy `export.xml` to `data` folder, then use the notebook [process_data.ipynb](./data/process_data.ipynb) to sanitize it and export to csv files. If you are interested to do some discovery against the data, use [analyze_data.ipynb](./data/analyze_data.ipynb) to explore it.
+## Construction de l'image
 
-### Backend Framework
-
-LangChain is an open source framework for developing applications powered by language models. It provides:
-
-- Components - abstractions for working with language models, along with a collection of implementations for each abstraction.
-
-- Off-the-shelf chains - a structured assembly of components for accomplishing specific higher-level tasks.
-
-### Frontend Framework
-
-Streamlit is an open source framework that can turn data scripts into shareable web apps in minutes. It is all in pure Python, so no front‑end experience required.
-
-## Installation
-
-It is recommended to use `python 3.10+` with virtual environment.
-
-```
-cd PHC
-python -m venv .venv
-source .venv/bin/activate
-pip install -r src/requirements.txt
+```bash
+docker build -t phc .
 ```
 
-## Usage
+Le build utilise un **multi-stage** :
+- `builder` — résout et compile les dépendances Python en wheels
+- `runtime` — image finale allégée, sans outils de build, utilisateur non-root
 
-Make a copy of `.sample_env` file, and name it `.env`, then add your OpenAI API key in `OPENAI_API_KEY`. If you don't have one, you need to register with [OpenAI](https://platform.openai.com/).
+---
 
-Run the command `.venv/bin/streamlit run src/Home.py` to start the application, then you should be able to see something like below:
+## Variables d'environnement
+
+Copier `.sample_env` en `.env` et renseigner les valeurs :
+
+```bash
+cp .sample_env .env
+```
+
+| Variable | Description | Exemple |
+|---|---|---|
+| `NAME` | Prénom affiché dans l'assistant | `Runner` |
+| `GENDER` | Genre (`male` / `female`) | `male` |
+| `AGE` | Âge en années | `30` |
+| `WEIGHT` | Poids en kg | `75` |
+| `HEIGHT` | Taille en cm | `175` |
+| `PACE` | Objectif d'allure en min/km | `6.30` |
+| `STRIDE_LENGTH` | Objectif de longueur de foulée en m | `1.00` |
+| `HEART_RATE` | Objectif de fréquence cardiaque max | `160` |
+| `GROUND_CONTACT_TIME` | Objectif de temps de contact sol en ms | `250` |
+| `HEALTH_RECORD_FILE` | Chemin vers le CSV des records | `data/records_data.csv` |
+| `HEALTH_WORKOUT_FILE` | Chemin vers le CSV des workouts | `data/workouts_data.csv` |
+| `OPENAI_API_KEY` | **Obligatoire** — clé API OpenAI | `sk-...` |
+| `SERPAPI_API_KEY` | Optionnel — pour la recherche web | `...` |
+
+> Les secrets ne doivent jamais être intégrés dans l'image. Ils sont injectés au `docker run` via `--env-file`.
+
+---
+
+## Port exposé
+
+| Port | Protocole | Usage |
+|---|---|---|
+| `8501` | TCP | Interface web Streamlit |
+
+---
+
+## Lancer le conteneur
+
+```bash
+docker run -p 8501:8501 --env-file .env phc
+```
+
+L'application est accessible sur [http://localhost:8501](http://localhost:8501).
+
+---
+
+## Commandes utiles
+
+**Lancer en arrière-plan**
+```bash
+docker run -d -p 8501:8501 --env-file .env --name phc-app phc
+```
+
+**Voir les logs en temps réel**
+```bash
+docker logs -f phc-app
+```
+
+**Arrêter le conteneur**
+```bash
+docker stop phc-app
+```
+
+**Supprimer le conteneur**
+```bash
+docker rm phc-app
+```
+
+**Reconstruire sans cache**
+```bash
+docker build --no-cache -t phc .
+```
+
+**Inspecter l'image (taille, layers)**
+```bash
+docker image inspect phc
+docker history phc
+```
+
+**Ouvrir un shell de débogage (image builder uniquement)**
+```bash
+docker run --rm -it --entrypoint /bin/bash python:3.11-slim
+```
+
+> Le conteneur de production ne permet pas d'ouvrir un shell (`/sbin/nologin`).
+
+---
+
+## Données
+
+Le dépôt inclut des données d'exemple dans `data/` :
+
+| Fichier | Contenu |
+|---|---|
+| `records_data.csv` | Métriques de santé (fréquence cardiaque, foulée…) |
+| `workouts_data.csv` | Historique des séances |
+
+Pour utiliser vos propres données Apple Health : exporter depuis l'app Santé (icône utilisateur → Exporter), copier `export.xml` dans `data/`, puis exécuter `data/process_data.ipynb`.
+
+---
+
+## CI/CD
+
+Le dépôt utilise **GitHub Actions** pour construire et publier automatiquement l'image Docker sur Docker Hub.
+
+### Déclencheurs
+
+| Événement | Action |
+|---|---|
+| Push sur `main` | Build + push de l'image vers Docker Hub |
+| Pull Request vers `main` | Build uniquement (pas de push) |
+
+### Secrets requis
+
+Configurer dans **Settings → Secrets and variables → Actions** :
+
+| Secret | Description |
+|---|---|
+| `DOCKER_HUB_USERNAME` | Nom d'utilisateur Docker Hub |
+| `DOCKER_HUB_TOKEN` | Token d'accès Docker Hub (Account Settings → Security) |
+
+### Images publiées
 
 ```
-(.venv) ➜  PHC git:(main) .venv/bin/streamlit run src/Home.py
-
-  You can now view your Streamlit app in your browser.
-
-  Local URL: http://localhost:8501
+<DOCKER_HUB_USERNAME>/mon-application:latest
+<DOCKER_HUB_USERNAME>/mon-application:<git-sha>
 ```
+
+---
 
 ## Demo
 

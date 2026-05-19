@@ -5,9 +5,9 @@ import os
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.callbacks import StreamlitCallbackHandler
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_community.callbacks import StreamlitCallbackHandler
+from langchain_community.chat_models import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
 
 load_dotenv()
 AGE = os.getenv("AGE")

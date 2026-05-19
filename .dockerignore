@@ -1,0 +1,10 @@
+.venv
+.git
+.env
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+data/*.ipynb
+data/demo.gif
+README.md

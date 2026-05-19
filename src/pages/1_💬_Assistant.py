@@ -4,12 +4,11 @@ import os
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.utilities import SerpAPIWrapper
-from langchain.agents import AgentType, Tool, initialize_agent
+from langchain_community.utilities import SerpAPIWrapper
+from langchain_classic.agents import AgentType, Tool, initialize_agent
 from langchain_experimental.agents.agent_toolkits import create_csv_agent
-from langchain_experimental.agents.agent_toolkits import create_csv_agent
-from langchain.callbacks import StreamlitCallbackHandler
-from langchain.chat_models import ChatOpenAI
+from langchain_community.callbacks import StreamlitCallbackHandler
+from langchain_community.chat_models import ChatOpenAI
 
 load_dotenv()
 NAME = os.getenv("NAME")
